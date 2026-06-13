@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOD Mode - Android Auto Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        .car-display {
+            width: 1024px;
+            height: 600px;
+            background: #0a0a0a;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 80px rgba(0,0,0,0.8);
+        }
+
+        /* ===== SCREENS ===== */
+        .screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            pointer-events: none;
+        }
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ===== BOOT SCREEN ===== */
+        .boot-screen {
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .boot-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: boot-pulse 1.5s ease-in-out infinite;
+        }
+        .boot-sub {
+            color: #555;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            letter-spacing: 3px;
+        }
+        .boot-spinner {
+            margin-top: 2rem;
+            width: 30px; height: 30px;
+            border: 3px solid #222;
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes boot-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* ===== AA HOME SCREEN ===== */
+        .aa-home {
+            background: #111;
+            display: flex;
+            flex-direction: column;
+        }
+        .aa-statusbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 20px;
+            background: #0d0d0d;
+            border-bottom: 1px solid #222;
+            font-size: 0.75rem;
+            color: #888;
+        }
+        .aa-statusbar-left { display: flex; align-items: center; gap: 8px; }
+        .aa-statusbar-right { display: flex; align-items: center; gap: 12px; }
+        .aa-time { font-weight: 600; color: #ccc; font-size: 0.85rem; }
+
+        .aa-apps {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 12px;
+            padding: 24px 30px;
+            align-content: center;
+        }
+        .aa-app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 12px;
+        }
+        .aa-app:hover { background: rgba(255,255,255,0.05); }
+        .aa-app-icon {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .aa-app-name {
+            font-size: 0.65rem;
+            color: #aaa;
+            text-align: center;
+        }
+
+        /* ===== GOD MODE APP ===== */
+        .godmode-screen {
+            background: #0a0a12;
+            display: flex;
+            flex-direction: column;
+        }
+        .gm-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            background: #0d0d18;
+            border-bottom: 1px solid #1a1a2e;
+            gap: 12px;
+        }
+        .gm-back {
+            color: #00d4ff;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .gm-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #00d4ff;
+            letter-spacing: 2px;
+        }
+        .gm-badge {
+            margin-left: auto;
+            background: linear-gradient(135deg, #00e676, #00c853);
+            color: #000;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+
+        .gm-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 16px 20px;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        /* Search bar */
+        .gm-search {
+            display: flex;
+            align-items: center;
+            background: #12121e;
+            border: 1px solid #1e1e30;
+            border-radius: 10px;
+            padding: 10px 16px;
+            gap: 10px;
+        }
+        .gm-search-icon { color: #555; font-size: 0.9rem; }
+        .gm-search-text { color: #444; font-size: 0.85rem; }
+
+        /* Video grid */
+        .gm-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .gm-video-card {
+            background: #12121e;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .gm-video-card:hover {
+            border-color: #00d4ff;
+            transform: scale(1.02);
+        }
+        .gm-video-card.playing {
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0,212,255,0.2);
+        }
+        .gm-thumb {
+            width: 100%;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            position: relative;
+        }
+        .gm-thumb-duration {
+            position: absolute;
+            bottom: 4px; right: 4px;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            font-size: 0.55rem;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        .gm-video-title {
+            padding: 6px 8px;
+            font-size: 0.6rem;
+            color: #ccc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .gm-video-channel {
+            padding: 0 8px 6px;
+            font-size: 0.5rem;
+            color: #666;
+        }
+
+        /* ===== PLAYER SCREEN ===== */
+        .player-screen {
+            background: #000;
+            display: flex;
+            flex-direction: column;
+        }
+        .player-top {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background: rgba(0,0,0,0.9);
+            gap: 10px;
+        }
+        .player-back { color: #fff; font-size: 1.1rem; cursor: pointer; }
+        .player-info { flex: 1; }
+        .player-now-label { font-size: 0.55rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .player-video-title { font-size: 0.8rem; color: #fff; font-weight: 600; }
+
+        .player-video {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: #111;
+        }
+
+        /* Animated "video" content */
+        .video-canvas {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .video-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #0a0a2e, #1a0a2e, #0a1a2e);
+            animation: video-bg-shift 8s ease-in-out infinite;
+        }
+        @keyframes video-bg-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Animated equalizer bars */
+        .equalizer {
+            position: absolute;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+            align-items: flex-end;
+            height: 120px;
+        }
+        .eq-bar {
+            width: 8px;
+            background: linear-gradient(180deg, #00d4ff, #7c3aed);
+            border-radius: 4px;
+            animation: eq-bounce var(--dur) ease-in-out infinite alternate;
+        }
+        @keyframes eq-bounce {
+            0% { height: var(--min-h); }
+            100% { height: var(--max-h); }
+        }
+
+        /* Floating music notes */
+        .music-notes {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        .note {
+            position: absolute;
+            font-size: 1.5rem;
+            opacity: 0;
+            animation: note-float 4s ease-in-out infinite;
+        }
+        @keyframes note-float {
+            0% { opacity: 0; transform: translateY(50px) rotate(0deg); }
+            20% { opacity: 0.7; }
+            80% { opacity: 0.7; }
+            100% { opacity: 0; transform: translateY(-200px) rotate(30deg); }
+        }
+
+        /* Video title overlay */
+        .video-overlay-title {
+            position: absolute;
+            top: 16px; left: 16px;
+            background: rgba(0,0,0,0.7);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #fff;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Player controls */
+        .player-controls {
+            background: #0a0a0a;
+            padding: 10px 20px 14px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 3px;
+            background: #222;
+            border-radius: 2px;
+            margin-bottom: 10px;
+            position: relative;
+            cursor: pointer;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s linear;
+        }
+        .progress-thumb {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px; height: 12px;
+            background: #00d4ff;
+            border-radius: 50%;
+            left: 0%;
+            transition: left 0.3s linear;
+            box-shadow: 0 0 10px rgba(0,212,255,0.5);
+        }
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
+        .ctrl-btn {
+            color: #888;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: none;
+            border: none;
+        }
+        .ctrl-btn:hover { color: #fff; }
+        .ctrl-btn.play-btn {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            border-radius: 50%;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .ctrl-btn.play-btn:hover { transform: scale(1.1); }
+
+        /* Sidebar mini controls */
+        .player-sidebar {
+            position: absolute;
+            right: 0; top: 0;
+            width: 50px;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            backdrop-filter: blur(10px);
+        }
+        .sidebar-btn {
+            width: 36px; height: 36px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .sidebar-btn:hover {
+            background: rgba(0,212,255,0.2);
+            color: #00d4ff;
+        }
+        .sidebar-btn.active {
+            background: rgba(0,212,255,0.2);
+            color: #00d4ff;
+        }
+
+        /* ===== NAV BAR (bottom) ===== */
+        .aa-navbar {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100%;
+            height: 48px;
+            background: #0d0d0d;
+            border-top: 1px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 40px;
+        }
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            color: #555;
+            font-size: 0.55rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .nav-btn.active { color: #00d4ff; }
+        .nav-btn-icon { font-size: 1.1rem; }
+
+        /* ===== WATERMARK ===== */
+        .watermark {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.15);
+            letter-spacing: 3px;
+        }
+
+        /* ===== PLAY INDICATOR ===== */
+        .play-indicator {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 80px; height: 80px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #fff;
+            backdrop-filter: blur(10px);
+            animation: play-pop 0.6s ease forwards;
+            pointer-events: none;
+        }
+        @keyframes play-pop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        /* Scanline effect */
+        .scanlines {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.03) 2px,
+                rgba(0,0,0,0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="car-display" id="carDisplay">
+        <div class="scanlines"></div>
+
+        <!-- BOOT SCREEN -->
+        <div class="screen boot-screen active" id="bootScreen">
+            <div class="boot-logo">ANDROID AUTO</div>
+            <div class="boot-sub">CONNECTING...</div>
+            <div class="boot-spinner"></div>
+        </div>
+
+        <!-- AA HOME SCREEN -->
+        <div class="screen aa-home" id="aaHome">
+            <div class="aa-statusbar">
+                <div class="aa-statusbar-left">
+                    <span>&#128246;</span>
+                    <span>Pixel 7 Pro</span>
+                </div>
+                <div class="aa-statusbar-right">
+                    <span>&#128267; Wired</span>
+                    <span>&#128246; 85%</span>
+                    <span class="aa-time" id="aaTime">12:00</span>
+                </div>
+            </div>
+            <div class="aa-apps">
+                <div class="aa-app" onclick="openGodMode()">
+                    <div class="aa-app-icon" style="background: linear-gradient(135deg, #00d4ff, #7c3aed);">&#9889;</div>
+                    <div class="aa-app-name">GOD Mode</div>
+                </div>
+                <div class="aa-app">
+                    <div class="aa-app-icon" style="background: #1a73e8;">&#128205;</div>
+                    <div class="aa-app-name">Maps</div>
+                </div>
+                <div class="aa-app">
+                    <div class="aa-app-icon" style="background: #1db954;">&#127925;</div>
+                    <div class="aa-app-name">Spotify</div>
+                </div>
+                <div class="aa-app">
+                    <div class="aa-app-icon" style="background: #ea4335;">&#128222;</div>
+                    <div class="aa-app-name">Phone</div>
+                </div>
+                <div class="aa-app">
+                    <div class="aa-app-icon" style="background: #34a853;">&#128172;</div>
+                    <div class="aa-app-name">Messages</div>
+                </div>
+                <div class="aa-app">
+                    <div class="aa-app-icon" style="background: #fbbc05;">&#128250;</div>
+                    <div class="aa-app-name">YouTube</div>
+                </div>
+                <div class="aa-app">
+                    <div class="aa-app-icon" style="background: #5f6368;">&#9881;</div>
+                    <div class="aa-app-name">Settings</div>
+                </div>
+                <div class="aa-app">
+                    <div class="aa-app-icon" style="background: #1a73e8;">&#128247;</div>
+                    <div class="aa-app-name">Camera</div>
+                </div>
+                <div class="aa-app">
+                    <div class="aa-app-icon" style="background: #ea4335;">&#128293;</div>
+                    <div class="aa-app-name">News</div>
+                </div>
+                <div class="aa-app">
+                    <div class="aa-app-icon" style="background: #34a853;">&#127774;</div>
+                    <div class="aa-app-name">Weather</div>
+                </div>
+            </div>
+            <div class="aa-navbar">
+                <div class="nav-btn active"><div class="nav-btn-icon">&#127968;</div>Home</div>
+                <div class="nav-btn"><div class="nav-btn-icon">&#128205;</div>Maps</div>
+                <div class="nav-btn"><div class="nav-btn-icon">&#127925;</div>Music</div>
+                <div class="nav-btn"><div class="nav-btn-icon">&#128222;</div>Calls</div>
+                <div class="nav-btn"><div class="nav-btn-icon">&#128172;</div>More</div>
+            </div>
+        </div>
+
+        <!-- GOD MODE APP -->
+        <div class="screen godmode-screen" id="godmodeScreen">
+            <div class="gm-header">
+                <div class="gm-back" onclick="goHome()">&#8592;</div>
+                <div class="gm-title">&#9889; GOD MODE</div>
+                <div class="gm-badge">ACTIVE</div>
+            </div>
+            <div class="gm-body">
+                <div class="gm-search">
+                    <span class="gm-search-icon">&#128269;</span>
+                    <span class="gm-search-text">Search YouTube...</span>
+                </div>
+                <div class="gm-grid" id="videoGrid">
+                    <!-- Videos injected by JS -->
+                </div>
+            </div>
+            <div class="aa-navbar">
+                <div class="nav-btn"><div class="nav-btn-icon">&#127968;</div>Home</div>
+                <div class="nav-btn"><div class="nav-btn-icon">&#128205;</div>Maps</div>
+                <div class="nav-btn active"><div class="nav-btn-icon">&#127925;</div>Music</div>
+                <div class="nav-btn"><div class="nav-btn-icon">&#128222;</div>Calls</div>
+                <div class="nav-btn"><div class="nav-btn-icon">&#128172;</div>More</div>
+            </div>
+        </div>
+
+        <!-- PLAYER SCREEN -->
+        <div class="screen player-screen" id="playerScreen">
+            <div class="player-top">
+                <div class="player-back" onclick="backToGrid()">&#8592;</div>
+                <div class="player-info">
+                    <div class="player-now-label">Now Playing</div>
+                    <div class="player-video-title" id="playerTitle">Chill Driving Mix</div>
+                </div>
+                <div class="gm-badge">GOD MODE</div>
+            </div>
+            <div class="player-video" id="playerVideo">
+                <div class="video-canvas">
+                    <div class="video-bg"></div>
+                    <div class="equalizer" id="equalizer"></div>
+                    <div class="music-notes" id="musicNotes"></div>
+                    <div class="video-overlay-title" id="overlayTitle">Chill Driving Mix</div>
+                </div>
+                <div class="player-sidebar">
+                    <div class="sidebar-btn" title="Queue">&#9834;</div>
+                    <div class="sidebar-btn active" title="Like">&#9825;</div>
+                    <div class="sidebar-btn" title="Share">&#128228;</div>
+                    <div class="sidebar-btn" title="Quality">&#9881;</div>
+                </div>
+            </div>
+            <div class="player-controls">
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-thumb" id="progressThumb"></div>
+                </div>
+                <div class="time-display">
+                    <span id="currentTime">0:00</span>
+                    <span id="totalTime">3:45</span>
+                </div>
+                <div class="controls-row">
+                    <button class="ctrl-btn" title="Shuffle">&#128256;</button>
+                    <button class="ctrl-btn" title="Previous">&#9198;</button>
+                    <button class="ctrl-btn play-btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
+                    <button class="ctrl-btn" title="Next">&#9197;</button>
+                    <button class="ctrl-btn" title="Repeat">&#128257;</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="watermark">GOD MODE - DOWNLOAD FREE AT GODMODE.APP</div>
+
+    <script>
+        // ===== DATA =====
+        const videos = [
+            { title: 'Chill Driving Mix', channel: 'Music Vibes', duration: '3:45', color: '#1a1a3e', icon: '&#127925;' },
+            { title: 'Lo-Fi Beats 2026', channel: 'ChillHop', duration: '4:20', color: '#1a2e1a', icon: '&#127911;' },
+            { title: 'Top Hits Playlist', channel: 'Music World', duration: '5:12', color: '#2e1a1a', icon: '&#127926;' },
+            { title: 'Podcast: Tech Talk', channel: 'Tech Daily', duration: '45:30', color: '#1a2e2e', icon: '&#128250;' },
+            { title: 'Night Drive Vibes', channel: 'Synthwave', duration: '6:00', color: '#2e1a2e', icon: '&#127769;' },
+            { title: 'Road Trip Playlist', channel: 'Travel Mix', duration: '8:15', color: '#2e2e1a', icon: '&#128663;' },
+            { title: 'Workout Beats', channel: 'Fit Music', duration: '3:30', color: '#1a1a2e', icon: '&#128170;' },
+            { title: 'Morning Coffee Jazz', channel: 'Jazz Cafe', duration: '7:45', color: '#2e1a1a', icon: '&#9749;' },
+        ];
+
+        let isPlaying = false;
+        let progress = 0;
+        let progressInterval = null;
+        let currentTimeSec = 0;
+        let totalSeconds = 225; // 3:45
+
+        // ===== INIT =====
+        function init() {
+            buildVideoGrid();
+            buildEqualizer();
+            buildMusicNotes();
+            updateClock();
+            setInterval(updateClock, 1000);
+            runBootSequence();
+        }
+
+        // ===== BOOT SEQUENCE =====
+        function runBootSequence() {
+            setTimeout(() => {
+                document.getElementById('bootScreen').classList.remove('active');
+                document.getElementById('aaHome').classList.add('active');
+            }, 2500);
+        }
+
+        // ===== CLOCK =====
+        function updateClock() {
+            const now = new Date();
+            const h = now.getHours().toString().padStart(2, '0');
+            const m = now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('aaTime').textContent = h + ':' + m;
+        }
+
+        // ===== VIDEO GRID =====
+        function buildVideoGrid() {
+            const grid = document.getElementById('videoGrid');
+            grid.innerHTML = videos.map((v, i) => `
+                <div class="gm-video-card" onclick="playVideo(${i})" id="card${i}">
+                    <div class="gm-thumb" style="background: ${v.color};">
+                        ${v.icon}
+                        <div class="gm-thumb-duration">${v.duration}</div>
+                    </div>
+                    <div class="gm-video-title">${v.title}</div>
+                    <div class="gm-video-channel">${v.channel}</div>
+                </div>
+            `).join('');
+        }
+
+        // ===== EQUALIZER =====
+        function buildEqualizer() {
+            const eq = document.getElementById('equalizer');
+            let bars = '';
+            for (let i = 0; i < 20; i++) {
+                const minH = 10 + Math.random() * 20;
+                const maxH = 40 + Math.random() * 80;
+                const dur = 0.3 + Math.random() * 0.5;
+                const delay = Math.random() * 0.3;
+                bars += `<div class="eq-bar" style="--min-h: ${minH}px; --max-h: ${maxH}px; --dur: ${dur}s; animation-delay: ${delay}s;"></div>`;
+            }
+            eq.innerHTML = bars;
+        }
+
+        // ===== MUSIC NOTES =====
+        function buildMusicNotes() {
+            const container = document.getElementById('musicNotes');
+            const notes = ['&#9835;', '&#9834;', '&#9833;', '&#9839;', '&#9837;'];
+            let html = '';
+            for (let i = 0; i < 8; i++) {
+                const left = 10 + Math.random() * 80;
+                const delay = Math.random() * 4;
+                const size = 1 + Math.random() * 1.5;
+                html += `<div class="note" style="left: ${left}%; animation-delay: ${delay}s; font-size: ${size}rem;">${notes[i % notes.length]}</div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // ===== NAVIGATION =====
+        function openGodMode() {
+            document.getElementById('aaHome').classList.remove('active');
+            document.getElementById('godmodeScreen').classList.add('active');
+        }
+
+        function goHome() {
+            document.getElementById('godmodeScreen').classList.remove('active');
+            document.getElementById('playerScreen').classList.remove('active');
+            document.getElementById('aaHome').classList.add('active');
+        }
+
+        function backToGrid() {
+            stopPlayback();
+            document.getElementById('playerScreen').classList.remove('active');
+            document.getElementById('godmodeScreen').classList.add('active');
+        }
+
+        // ===== PLAYBACK =====
+        function playVideo(index) {
+            const v = videos[index];
+
+            // Highlight card
+            document.querySelectorAll('.gm-video-card').forEach(c => c.classList.remove('playing'));
+            document.getElementById('card' + index).classList.add('playing');
+
+            // Set title
+            document.getElementById('playerTitle').textContent = v.title;
+            document.getElementById('overlayTitle').textContent = v.title;
+
+            // Parse duration
+            const parts = v.duration.split(':');
+            totalSeconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+            document.getElementById('totalTime').textContent = v.duration;
+
+            // Reset progress
+            progress = 0;
+            currentTimeSec = 0;
+            updateProgress();
+
+            // Switch screen
+            setTimeout(() => {
+                document.getElementById('godmodeScreen').classList.remove('active');
+                document.getElementById('playerScreen').classList.add('active');
+                startPlayback();
+            }, 300);
+        }
+
+        function startPlayback() {
+            isPlaying = true;
+            document.getElementById('playBtn').innerHTML = '&#10074;&#10074;';
+
+            progressInterval = setInterval(() => {
+                if (isPlaying) {
+                    currentTimeSec += 1;
+                    progress = (currentTimeSec / totalSeconds) * 100;
+                    if (progress >= 100) {
+                        progress = 100;
+                        stopPlayback();
+                    }
+                    updateProgress();
+                }
+            }, 500);
+        }
+
+        function stopPlayback() {
+            isPlaying = false;
+            document.getElementById('playBtn').innerHTML = '&#9654;';
+            if (progressInterval) clearInterval(progressInterval);
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                stopPlayback();
+            } else {
+                startPlayback();
+            }
+        }
+
+        function updateProgress() {
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressThumb').style.left = progress + '%';
+            const mins = Math.floor(currentTimeSec / 60);
+            const secs = (currentTimeSec % 60).toString().padStart(2, '0');
+            document.getElementById('currentTime').textContent = mins + ':' + secs;
+        }
+
+        // ===== AUTO DEMO =====
+        function autoDemo() {
+            setTimeout(() => openGodMode(), 3000);
+            setTimeout(() => playVideo(0), 4000);
+        }
+
+        // Start
+        init();
+        autoDemo();
+    </script>
+</body>
+</html>
