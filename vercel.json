@@ -1,8 +1,6 @@
 {
-  "buildCommand": null,
-  "outputDirectory": ".",
-  "framework": null,
-  "installCommand": null,
+  "cleanUrls": true,
+  "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",
@@ -10,13 +8,5 @@
         { "key": "Access-Control-Allow-Origin", "value": "*" }
       ]
     }
-  ],
-  "rewrites": [
-    { "source": "/demo", "destination": "/demo.html" },
-    { "source": "/demo.html", "destination": "/demo.html" },
-    { "source": "/style.css", "destination": "/style.css" },
-    { "source": "/script.js", "destination": "/script.js" },
-    { "source": "/server.cjs", "destination": "/server.cjs" },
-    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

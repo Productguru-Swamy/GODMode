@@ -1,0 +1,9 @@
+{
+  "name": "godmode",
+  "version": "2.1.0",
+  "private": true,
+  "description": "GOD Mode - Play YouTube on Android Auto",
+  "scripts": {
+    "start": "node server.local.cjs"
+  }
+}
