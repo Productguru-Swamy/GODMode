@@ -1,6 +1,8 @@
 {
-  "cleanUrls": true,
-  "trailingSlash": false,
+  "outputDirectory": ".",
+  "buildCommand": null,
+  "installCommand": null,
+  "framework": null,
   "headers": [
     {
       "source": "/(.*)",
@@ -8,5 +10,8 @@
         { "key": "Access-Control-Allow-Origin", "value": "*" }
       ]
     }
+  ],
+  "rewrites": [
+    { "source": "/demo", "destination": "/demo.html" }
   ]
 }
